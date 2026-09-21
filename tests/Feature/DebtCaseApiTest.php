@@ -65,4 +65,75 @@ class DebtCaseApiTest extends TestCase
 
         $this->assertDatabaseCount('debt_cases', 0);
     }
+
+    public function test_debt_cases_can_be_listed_and_filtered_by_status(): void
+    {
+        $client = Client::create([
+            'first_name' => 'Mario',
+            'last_name' => 'Rossi',
+            'email' => 'mario.rossi@example.com',
+        ]);
+
+        $newCase = DebtCase::create([
+            'client_id' => $client->id,
+            'description' => 'New debt case',
+            'debt_amount' => '500.00',
+        ]);
+
+        $closedCase = DebtCase::create([
+            'client_id' => $client->id,
+            'description' => 'Closed debt case',
+            'debt_amount' => '750.00',
+        ]);
+
+        $closedCase->status = DebtCase::STATUS_CLOSED;
+        $closedCase->save();
+
+        $this->getJson('/api/cases')
+            ->assertOk()
+            ->assertJsonCount(2);
+
+        $this->getJson('/api/cases?status=new')
+            ->assertOk()
+            ->assertJsonCount(1)
+            ->assertJsonPath('0.id', $newCase->id);
+    }
+
+    public function test_case_can_be_viewed(): void
+    {
+        $client = Client::create([
+            'first_name' => 'Mario',
+            'last_name' => 'Rossi',
+            'email' => 'mario.rossi@example.com',
+        ]);
+
+        $debtCase = DebtCase::create([
+            'client_id' => $client->id,
+            'description' => 'Personal loan debt',
+            'debt_amount' => '900.00',
+        ]);
+
+        $this->getJson("/api/cases/{$debtCase->id}")
+            ->assertOk()
+            ->assertJson([
+                'id' => $debtCase->id,
+                'client_id' => $client->id,
+                'description' => 'Personal loan debt',
+                'debt_amount' => '900.00',
+                'status' => DebtCase::STATUS_NEW,
+            ]);
+    }
+
+    public function test_missing_case_returns_not_found(): void
+    {
+        $this->getJson('/api/cases/999999')
+            ->assertNotFound();
+    }
+
+    public function test_invalid_status_filter_is_rejected(): void
+    {
+        $this->getJson('/api/cases?status=invalid')
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('status');
+    }
 }
