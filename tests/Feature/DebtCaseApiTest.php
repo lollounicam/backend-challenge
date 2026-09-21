@@ -136,4 +136,93 @@ class DebtCaseApiTest extends TestCase
             ->assertUnprocessable()
             ->assertJsonValidationErrors('status');
     }
+
+    public function test_closed_case_cannot_be_reopened(): void
+    {
+        $client = Client::create([
+            'first_name' => 'Mario',
+            'last_name' => 'Rossi',
+            'email' => 'mario.rossi@example.com',
+        ]);
+        $debtCase = DebtCase::create([
+            'client_id' => $client->id,
+            'description' => 'Personal loan debt',
+            'debt_amount' => '1000.00',
+        ]);
+
+        $this->patchJson("/api/cases/{$debtCase->id}/status", [
+            'status' => DebtCase::STATUS_IN_PROGRESS,
+        ])
+            ->assertOk()
+            ->assertJsonPath('status', DebtCase::STATUS_IN_PROGRESS);
+
+        $this->patchJson("/api/cases/{$debtCase->id}/status", [
+            'status' => DebtCase::STATUS_CLOSED,
+        ])
+            ->assertOk()
+            ->assertJsonPath('status', DebtCase::STATUS_CLOSED);
+
+        $this->patchJson("/api/cases/{$debtCase->id}/status", [
+            'status' => DebtCase::STATUS_IN_PROGRESS,
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('status');
+
+        $this->assertDatabaseHas('debt_cases', [
+            'id' => $debtCase->id,
+            'status' => DebtCase::STATUS_CLOSED,
+        ]);
+    }
+
+    public function test_case_cannot_skip_status_steps(): void
+    {
+        $client = Client::create([
+            'first_name' => 'Mario',
+            'last_name' => 'Rossi',
+            'email' => 'mario.rossi@example.com',
+        ]);
+
+        $debtCase = DebtCase::create([
+            'client_id' => $client->id,
+            'description' => 'Personal loan debt',
+            'debt_amount' => '1000.00',
+        ]);
+
+        $this->patchJson("/api/cases/{$debtCase->id}/status", [
+            'status' => DebtCase::STATUS_CLOSED,
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('status');
+
+        $this->assertDatabaseHas('debt_cases', [
+            'id' => $debtCase->id,
+            'status' => DebtCase::STATUS_NEW,
+        ]);
+    }
+
+    public function test_confirming_current_status_is_accepted(): void
+    {
+        $client = Client::create([
+            'first_name' => 'Mario',
+            'last_name' => 'Rossi',
+            'email' => 'mario.rossi@example.com',
+        ]);
+
+        $debtCase = DebtCase::create([
+            'client_id' => $client->id,
+            'description' => 'Personal loan debt',
+            'debt_amount' => '1000.00',
+        ]);
+
+        $this->patchJson("/api/cases/{$debtCase->id}/status", [
+            'status' => DebtCase::STATUS_NEW,
+        ])
+            ->assertOk()
+            ->assertJsonPath('status', DebtCase::STATUS_NEW);
+
+        $this->assertDatabaseHas('debt_cases', [
+            'id' => $debtCase->id,
+            'status' => DebtCase::STATUS_NEW,
+        ]);
+    }
 }

@@ -16,6 +16,20 @@ class DebtCase extends Model
 
     public const STATUS_CLOSED = 'closed';
 
+    public const ALLOWED_TRANSITIONS = [
+        self::STATUS_NEW => [
+            self::STATUS_NEW,
+            self::STATUS_IN_PROGRESS,
+        ],
+        self::STATUS_IN_PROGRESS => [
+            self::STATUS_IN_PROGRESS,
+            self::STATUS_CLOSED,
+        ],
+        self::STATUS_CLOSED => [
+            self::STATUS_CLOSED,
+        ],
+    ];
+
     public $timestamps = false;
 
     protected $fillable = [
@@ -30,6 +44,15 @@ class DebtCase extends Model
             'debt_amount' => 'decimal:2',
             'opened_at' => 'datetime',
         ];
+    }
+
+    public function canTransitionTo(string $status): bool
+    {
+        return in_array(
+            $status,
+            self::ALLOWED_TRANSITIONS[$this->status],
+            true,
+        );
     }
 
     public function client(): BelongsTo
