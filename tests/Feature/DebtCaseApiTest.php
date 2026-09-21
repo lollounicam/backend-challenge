@@ -225,4 +225,36 @@ class DebtCaseApiTest extends TestCase
             'status' => DebtCase::STATUS_NEW,
         ]);
     }
+
+    public function test_case_with_missing_client_is_rejected(): void
+    {
+        $this->postJson('/api/cases', [
+            'client_id' => 999999,
+            'description' => 'Personal loan debt',
+            'debt_amount' => '500.00',
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('client_id');
+
+        $this->assertDatabaseCount('debt_cases', 0);
+    }
+
+    public function test_amount_with_more_than_two_decimals_is_rejected(): void
+    {
+        $client = Client::create([
+            'first_name' => 'Mario',
+            'last_name' => 'Rossi',
+            'email' => 'mario.rossi@example.com',
+        ]);
+
+        $this->postJson('/api/cases', [
+            'client_id' => $client->id,
+            'description' => 'Personal loan debt',
+            'debt_amount' => '500.123',
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('debt_amount');
+
+        $this->assertDatabaseCount('debt_cases', 0);
+    }
 }

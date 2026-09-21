@@ -27,7 +27,7 @@ class StoreClientRequest extends FormRequest
                 : $this->last_name,
 
             'email' => is_string($this->email)
-                ? strtolower($this->email)
+                ? strtolower(trim($this->email))
                 : $this->email,
         ]);
     }
