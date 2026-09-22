@@ -375,6 +375,21 @@ On Windows PowerShell:
 ```powershell
 .\vendor\bin\pint
 ```
+## Design choices
+
+Laravel Form Requests are used to validate incoming data and keep validation logic separate from the controllers.
+
+The case workflow is managed in the `DebtCase` model because status transitions are part of its business rules.
+
+Eloquent relationships and a database foreign key are used to associate each debt case with an existing client.
+
+The project follows a simple structure without introducing additional architectural layers that were not necessary for its size.
+
+## Incomplete features and future improvements
+
+All the features required by the assignment have been implemented.
+
+Possible future improvements include authentication, pagination, Docker support, OpenAPI documentation, and a general code cleanup and refactoring pass to improve consistency and maintainability. These improvements were not included because they were outside the requested scope and the available time.
 
 ## Tools and AI usage
 
