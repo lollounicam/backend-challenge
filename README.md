@@ -403,4 +403,4 @@ AI tools were also used to help write this README.
 
 ## Time spent
 
-Approximately 10 hours were spent completing the project.
+Approximately 14 hours were spent completing the project.
